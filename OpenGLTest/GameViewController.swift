@@ -15,15 +15,13 @@ func BUFFER_OFFSET(i: Int) -> UnsafePointer<Void> {
 }
 
 let UNIFORM_MODELVIEWPROJECTION_MATRIX = 0
-let UNIFORM_NORMAL_MATRIX = 1
-var uniforms = [GLint](count: 2, repeatedValue: 0)
+var uniforms = [GLint](count: 1, repeatedValue: 0)
 
 class GameViewController: GLKViewController {
     
     var program: GLuint = 0
     
     var modelViewProjectionMatrix:GLKMatrix4 = GLKMatrix4Identity
-    var normalMatrix: GLKMatrix3 = GLKMatrix3Identity
     var rotation: Float = 0.0
     
     var vertexArray: GLuint = 0
@@ -131,8 +129,6 @@ class GameViewController: GLKViewController {
         modelViewMatrix = GLKMatrix4Rotate(modelViewMatrix, rotation, 1.0, 1.0, 1.0)
         modelViewMatrix = GLKMatrix4Multiply(baseModelViewMatrix, modelViewMatrix)
         
-        normalMatrix = GLKMatrix3InvertAndTranspose(GLKMatrix4GetMatrix3(modelViewMatrix), nil)
-        
         modelViewProjectionMatrix = GLKMatrix4Multiply(projectionMatrix, modelViewMatrix)
         
         rotation += Float(self.timeSinceLastUpdate * 0.5)
@@ -149,10 +145,6 @@ class GameViewController: GLKViewController {
         
         withUnsafePointer(&modelViewProjectionMatrix, {
             glUniformMatrix4fv(uniforms[UNIFORM_MODELVIEWPROJECTION_MATRIX], 1, 0, UnsafePointer($0))
-        })
-        
-        withUnsafePointer(&normalMatrix, {
-            glUniformMatrix3fv(uniforms[UNIFORM_NORMAL_MATRIX], 1, 0, UnsafePointer($0))
         })
         
         glDrawArrays(GLenum(GL_TRIANGLES), 0, Int32(gVertexData.count/3))
@@ -192,7 +184,6 @@ class GameViewController: GLKViewController {
         // Bind attribute locations.
         // This needs to be done prior to linking.
         glBindAttribLocation(program, GLuint(GLKVertexAttrib.Position.rawValue), "position")
-        glBindAttribLocation(program, GLuint(GLKVertexAttrib.Normal.rawValue), "normal")
         
         // Link program.
         if !self.linkProgram(program) {
@@ -216,7 +207,6 @@ class GameViewController: GLKViewController {
         
         // Get uniform locations.
         uniforms[UNIFORM_MODELVIEWPROJECTION_MATRIX] = glGetUniformLocation(program, "modelViewProjectionMatrix")
-        uniforms[UNIFORM_NORMAL_MATRIX] = glGetUniformLocation(program, "normalMatrix")
         
         // Release vertex and fragment shaders.
         if vertShader != 0 {
